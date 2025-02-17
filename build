@@ -1,0 +1,6 @@
+#!/bin/bash
+
+g++ -Wall -o bash_main main.cpp longNumber.cpp
+./bash_main
+valgrind ./bash_main &> valgindLog
+rm bash_main

@@ -36,6 +36,9 @@ public:
     bool operator>(const longNumber& that) const;
     bool operator<(const longNumber& that) const;
 
+    friend longNumber operator""_longnum(long double number);
+    longNumber& operator=(const longNumber& that) = default;
+
     longNumber Abs() const;
     longNumber multiply_const(uint32_t k) const;
     longNumber operator-() const;
@@ -46,3 +49,5 @@ public:
 
     vector<bool> toBinary() const;
 };
+
+longNumber operator""_longnum(long double number);

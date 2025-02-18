@@ -1,5 +1,7 @@
 #include "longNumber.hpp"
 
+//  Double constructor max precision
+//  And Division operation max precision
 #define MAX_ACCURACY 10
 
 longNumber::longNumber()
@@ -55,6 +57,42 @@ longNumber::longNumber(double a)
         integer_part = tmp;
     }
     this->verify_zeros();
+}
+
+longNumber operator""_longnum(long double a)
+{
+    longNumber result{};
+    result.positive = a >= 0;
+    if (!result.positive)
+    {
+        a = -a;
+    }
+    long double tmp, mod = ((long double) 0xffffffff) + 1;
+    long double integer_part = floorf128(a);
+    long double fractional_part = a - integer_part;
+
+    while (fractional_part > 0 && result.exp < MAX_ACCURACY)
+    {
+        fractional_part = fractional_part * mod;
+        tmp = floorf64(fractional_part);
+        result.num.push_back((uint32_t) tmp);
+        result.exp += 1;
+        fractional_part -= tmp;
+    }
+    int n = result.num.size();
+    for (int i = 0; i < n / 2; i++)
+    {
+        std::swap(result.num[i], result.num[n - i - 1]);
+    }
+
+    while (integer_part > 0)
+    {
+        tmp = floorf64(integer_part / mod);
+        result.num.push_back((uint32_t) (integer_part - tmp * mod));
+        integer_part = tmp;
+    }
+    result.verify_zeros();
+    return result;
 }
 
 longNumber::longNumber(const vector<bool>& binary)
@@ -575,3 +613,4 @@ longNumber longNumber::operator/(const longNumber& that) const
     if (this->positive != that.positive) return -result;
     return result;
 }
+

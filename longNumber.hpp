@@ -1,15 +1,16 @@
+#ifndef LONGNUMBER_HEADER_GUARD
+#define LONGNUMBER_HEADER_GUARD
+
 #include <iostream>
 #include <vector>
 #include <stdint.h>
 #include <cmath>
 
-using namespace std;
-
 class longNumber
 {
 private:
     bool positive = true;
-    vector<uint32_t> num;
+    std::vector<uint32_t> num;
     int exp = 0;
 
     void verify_zeros();
@@ -25,8 +26,8 @@ public:
     longNumber(int a);
     longNumber(double a);
     longNumber(const longNumber& that);
-    longNumber(const vector<bool>& binary);
-    longNumber(const vector<bool>& binary, int exponent);
+    longNumber(const std::vector<bool>& binary);
+    longNumber(const std::vector<bool>& binary, int exponent);
     ~longNumber();
 
     void longNumberPrint() const;
@@ -40,6 +41,7 @@ public:
     longNumber& operator=(const longNumber& that) = default;
 
     longNumber Abs() const;
+    longNumber truncate() const;
     longNumber multiply_const(uint32_t k) const;
     longNumber operator-() const;
     longNumber operator+(const longNumber& that) const;
@@ -47,7 +49,10 @@ public:
     longNumber operator*(const longNumber& that) const;
     longNumber operator/(const longNumber& that) const;
 
-    vector<bool> toBinary() const;
+    std::vector<bool> toBinary() const;
+    std::string toDecimal() const;
 };
 
 longNumber operator""_longnum(long double number);
+
+#endif

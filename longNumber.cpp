@@ -1,8 +1,10 @@
 #include "longNumber.hpp"
 
+
+using namespace std;
 //  Double constructor max precision
 //  And Division operation max precision
-#define MAX_ACCURACY 10
+#define MAX_ACCURACY 11
 
 longNumber::longNumber()
 {
@@ -486,18 +488,8 @@ longNumber longNumber::multiply_const(uint32_t k) const
 
 longNumber longNumber::byte_move(int bytes) const
 {
-    longNumber result;
-    result.positive = this->positive;
+    longNumber result = *this;
     result.exp = max(0, this->exp - bytes);
-    int n = this->num.size();
-    for (int i = 0; i < bytes; i++)
-    {
-        result.num.push_back(0U);
-    }
-    for (int i = 0; i < n; i++)
-    {
-        result.num.push_back(this->num[i]);
-    }
     while ((int) result.num.size() < result.exp + 1)
     {
         result.num.push_back(0U);
@@ -584,7 +576,6 @@ longNumber longNumber::divide_positive_zero_exp(const longNumber& that) const
         }
         ind1 += 1;
     }
-    
     return longNumber(result, exponent);
 }
 
@@ -614,3 +605,56 @@ longNumber longNumber::operator/(const longNumber& that) const
     return result;
 }
 
+longNumber longNumber::truncate() const
+{
+    int exp = this->exp, n = this->num.size();
+    longNumber result;
+    result.positive = this->positive;
+    for (int i = exp; i < n; ++i)
+    {
+        result.num.push_back(this->num[i]);
+    }
+    return result;
+}
+
+std::string longNumber::toDecimal() const
+{
+    longNumber base = 10.0_longnum, zero = 0.0_longnum;
+    const std::string digits = "0123456789";
+    std::string result;
+    longNumber whole = this->truncate();
+    cout << "Got here 0\n";
+    while (whole > zero)
+    {
+        longNumber d = (whole / base).truncate();
+        uint32_t rem = (whole - d * base).num[0];
+        whole = d;
+        result.push_back(digits[rem]);
+    }
+    cout << "Got here 1\n";
+    if (result.size() == 0)
+    {
+        result.push_back('0');
+    }
+    if (!this->positive)
+    {
+        result.push_back('-');
+    }
+    for (int i = 0; i < (int) result.length() / 2; ++i)
+    {
+        std::swap(result[i], result[result.length() - i - 1]);
+    }
+
+    longNumber frac = (*this - this->truncate()).Abs();
+    if (frac != zero) {
+        result.push_back('.');
+    }
+    cout << "Got here 2\n";
+    while (frac > zero) {
+        frac = frac * base;
+        longNumber rem = frac.truncate();
+        result.push_back(digits[rem.num[0]]);
+        frac = frac - rem;
+    }
+    return result;
+}

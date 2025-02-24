@@ -1,10 +1,7 @@
 #include "longNumber.hpp"
 
-
 using namespace std;
-//  Double constructor max precision
-//  And Division operation max precision
-#define MAX_ACCURACY 11
+
 
 longNumber::longNumber()
 {
@@ -13,22 +10,16 @@ longNumber::longNumber()
 
 longNumber::longNumber(int a)
 {
-    //printf("Making new obj from int\n");
     this->positive = a >= 0;
     if (!this->positive)
     {
-        if (a != INT32_MIN)
-        {
-            a = -a;
-        }
-        else printf("Failed to extrat sign\n");
+        a = -a;
     }
     this->num.push_back((uint32_t) a);
 }
 
 longNumber::longNumber(double a)
 {
-    //printf("Making new obj from double\n");
     this->positive = a >= 0;
     if (!this->positive)
     {
@@ -38,7 +29,7 @@ longNumber::longNumber(double a)
     double integer_part = floorf64(a);
     double fractional_part = a - integer_part;
 
-    while (fractional_part > 0 && this->exp < MAX_ACCURACY)
+    while (fractional_part > 0 && this->exp < 10)
     {
         fractional_part = fractional_part * mod;
         tmp = floorf64(fractional_part);
@@ -73,7 +64,7 @@ longNumber operator""_longnum(long double a)
     long double integer_part = floorf128(a);
     long double fractional_part = a - integer_part;
 
-    while (fractional_part > 0 && result.exp < MAX_ACCURACY)
+    while (fractional_part > 0 && result.exp < 10)
     {
         fractional_part = fractional_part * mod;
         tmp = floorf64(fractional_part);
@@ -204,14 +195,6 @@ void longNumber::verify_zeros()
         n -= 1;
     }
 
-    int ind = 0;
-    while (ind < this->exp && this->num[ind] == 0)
-    {
-        ind += 1;
-    }
-    this->num.erase(this->num.begin(), this->num.begin() + ind);
-    this->exp -= ind;
-
     longNumber negative_zero(0);
     negative_zero.positive = false;
     if (*this == negative_zero)
@@ -247,7 +230,6 @@ bool longNumber::operator!=(const longNumber& that) const
 
 bool longNumber::greater_positive(const longNumber& that) const
 {
-    // assert both positive
     if (*this == that)
     {
         return false;
@@ -500,7 +482,6 @@ longNumber longNumber::byte_move(int bytes) const
 longNumber longNumber::multiply_positive(const longNumber& that) const
 {
     longNumber result(0), tmp(0);
-    // assert both positive
     int len1 = this->num.size();
     for (int i = 0; i < len1; i++)
     {
@@ -509,6 +490,7 @@ longNumber longNumber::multiply_positive(const longNumber& that) const
         result = result + tmp;
     }
     result.verify_zeros();
+    result = result.extendZeros(max(this->exp, that.exp) - result.exp);
     return result;
 }
 
@@ -542,7 +524,7 @@ vector<bool> longNumber::toBinary() const
     return result;
 }
 
-longNumber longNumber::divide_positive_zero_exp(const longNumber& that) const
+longNumber longNumber::divide_positive_zero_exp(const longNumber& that, int accuracy) const
 {
     vector<bool> dividend = this->toBinary();
     int n = dividend.size();
@@ -550,7 +532,7 @@ longNumber longNumber::divide_positive_zero_exp(const longNumber& that) const
     vector<bool> buffer, result;
     longNumber operand(1), zero(0);
     int ind1 = 0, exponent = 0;
-    while ((ind1 < n) || (operand != zero && (ind1 - n < MAX_ACCURACY * 32)))
+    while ((ind1 < n) || (operand != zero && (ind1 - n < accuracy * 32)))
     {
         if (ind1 < n)
         {
@@ -562,7 +544,7 @@ longNumber longNumber::divide_positive_zero_exp(const longNumber& that) const
             exponent += 1;
         }
 
-        operand = longNumber(buffer); // СЮДА НЕ СМОТРЕТЬ (ВСЕ МАКСИМАЛЬНО ОПТИМИЗИРОВАННО)!!!
+        operand = longNumber(buffer);
 
         if (operand > that || operand == that)
         {
@@ -582,11 +564,13 @@ longNumber longNumber::divide_positive_zero_exp(const longNumber& that) const
 longNumber longNumber::divide_positive(const longNumber& that) const
 {
     // assert both positive
-
-    longNumber first = this->byte_move(this->exp), 
-               second = that.byte_move(that.exp);
-    longNumber result = first.divide_positive_zero_exp(second);
-    result = result.byte_move(that.exp - this->exp);
+    int exp1 = this->exp, exp2 = that.exp;
+    longNumber first = this->byte_move(exp1), 
+               second = that.byte_move(exp2);
+    int accuracy = max(exp1, exp2);
+    longNumber result = first.divide_positive_zero_exp(second, accuracy);
+    result = result.byte_move(exp2 - exp1);
+    result = result.extendZeros(max(this->exp, that.exp) - result.exp);
     result.verify_zeros();
     return result;
 }
@@ -617,24 +601,35 @@ longNumber longNumber::truncate() const
     return result;
 }
 
+longNumber longNumber::extendZeros(int k) const
+{
+    longNumber result;
+    result.exp = max(0, this->exp + k);
+    for (int i = 0; i < k; ++i)
+    {
+        result.num.push_back(0U);
+    }
+    int n = this->num.size();
+    for (int i = min(max(0, -k), this->exp); i < n; ++i)
+    {
+        result.num.push_back(this->num[i]);
+    }
+    return result;
+}
+
 std::string longNumber::toDecimal() const
 {
-    longNumber base = 10.0_longnum, zero = 0.0_longnum;
+    longNumber base = 10.0_longnum, zero = longNumber(0);
     const std::string digits = "0123456789";
     std::string result;
-    longNumber whole = this->truncate();
-    cout << "Got here 0\n";
-    while (whole > zero)
+    longNumber integer_part = this->truncate();
+    longNumber epsilon = (1.0_longnum).byte_move(-this->exp);
+    while (integer_part > epsilon)
     {
-        longNumber d = (whole / base).truncate();
-        uint32_t rem = (whole - d * base).num[0];
-        whole = d;
-        result.push_back(digits[rem]);
-    }
-    cout << "Got here 1\n";
-    if (result.size() == 0)
-    {
-        result.push_back('0');
+        longNumber d = (integer_part / base).truncate();
+        uint32_t reminder = (integer_part - d * base).num[0];
+        integer_part = d;
+        result.push_back(digits[reminder]);
     }
     if (!this->positive)
     {
@@ -649,12 +644,11 @@ std::string longNumber::toDecimal() const
     if (frac != zero) {
         result.push_back('.');
     }
-    cout << "Got here 2\n";
-    while (frac > zero) {
+    while (frac > epsilon) {
         frac = frac * base;
-        longNumber rem = frac.truncate();
-        result.push_back(digits[rem.num[0]]);
-        frac = frac - rem;
+        longNumber r = frac.truncate();
+        result.push_back(digits[r.num[0]]);
+        frac = frac - r;
     }
     return result;
 }

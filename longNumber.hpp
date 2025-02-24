@@ -13,21 +13,21 @@ private:
     std::vector<uint32_t> num;
     int exp = 0;
 
+    longNumber(const std::vector<bool>& binary);
+    longNumber(const std::vector<bool>& binary, int exponent);
     void verify_zeros();
     bool greater_positive(const longNumber& that) const;
     longNumber add_positive(const longNumber& that) const;
     longNumber substract_positive(const longNumber& that) const;
-    longNumber byte_move(int bytes) const;
     longNumber multiply_positive(const longNumber& that) const;
-    longNumber divide_positive_zero_exp(const longNumber& that) const;
+    longNumber divide_positive_zero_exp(const longNumber& that, int accuracy) const;
     longNumber divide_positive(const longNumber& that) const;
+    std::vector<bool> toBinary() const;
 public:
     longNumber(void);
     longNumber(int a);
     longNumber(double a);
     longNumber(const longNumber& that);
-    longNumber(const std::vector<bool>& binary);
-    longNumber(const std::vector<bool>& binary, int exponent);
     ~longNumber();
 
     void longNumberPrint() const;
@@ -42,6 +42,9 @@ public:
 
     longNumber Abs() const;
     longNumber truncate() const;
+    longNumber extendZeros(int k) const;
+    longNumber byte_move(int bytes) const;
+
     longNumber multiply_const(uint32_t k) const;
     longNumber operator-() const;
     longNumber operator+(const longNumber& that) const;
@@ -49,7 +52,6 @@ public:
     longNumber operator*(const longNumber& that) const;
     longNumber operator/(const longNumber& that) const;
 
-    std::vector<bool> toBinary() const;
     std::string toDecimal() const;
 };
 

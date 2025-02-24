@@ -1,0 +1,5 @@
+#!/bin/bash
+
+g++ -Wall -o tests test.cpp longNumber.cpp
+./tests
+rm tests

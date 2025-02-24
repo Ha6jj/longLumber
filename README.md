@@ -2,8 +2,8 @@
 
 This is a library for calculations with big numbers
 
-To run main code on Linux enter:
+To run pi calculation code on Linux enter:
 
-chmod 744
+chmod +x ./calculation
 
-./build
+./calculation
